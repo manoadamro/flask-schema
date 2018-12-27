@@ -119,9 +119,9 @@ class Object(Property):
 class Array(Property):
     def __init__(
         self,
-        schema: Type[Property],
-        min_length: Union[int, float] = None,
-        max_length: Union[int, float] = None,
+        schema: Union[Property, Type[Property]],
+        min_length: Union[int, float, Callable] = None,
+        max_length: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(Array, self).__init__(list, **kwargs)
@@ -143,8 +143,8 @@ class Number(Property):
     def __init__(
         self,
         types: Tuple = (int, float),
-        min_value: Union[int, float] = None,
-        max_value: Union[int, float] = None,
+        min_value: Union[int, float, Callable] = None,
+        max_value: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(Number, self).__init__(*types, **kwargs)
@@ -178,8 +178,8 @@ class Bool(Property):
 class String(Property):
     def __init__(
         self,
-        min_length: Union[int, float] = None,
-        max_length: Union[int, float] = None,
+        min_length: Union[int, float, Callable] = None,
+        max_length: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(String, self).__init__(str, **kwargs)
@@ -235,7 +235,10 @@ class Date(Property):
     date_format = "%Y-%m-%d"
 
     def __init__(
-        self, min_value: datetime.date = None, max_value: datetime.date = None, **kwargs
+        self,
+        min_value: Union[datetime.date, Callable] = None,
+        max_value: Union[datetime.date, Callable] = None,
+        **kwargs,
     ):
         super(Date, self).__init__(datetime.date, **kwargs)
         self.range = _Range(min_value, max_value)
@@ -282,8 +285,8 @@ class DateTime(Property):
 
     def __init__(
         self,
-        min_value: datetime.datetime = None,
-        max_value: datetime.datetime = None,
+        min_value: Union[datetime.datetime, Callable] = None,
+        max_value: Union[datetime.datetime, Callable] = None,
         **kwargs,
     ):
         super(DateTime, self).__init__(datetime.datetime, **kwargs)
