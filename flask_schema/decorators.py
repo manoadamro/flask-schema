@@ -60,14 +60,14 @@ class SchemaProtect:
     def response_body(self, response: Union[Dict, types.Property, types.Schema, None]):
         if not self.validate_output or self.output is None:
             return response
+        if isinstance(self.output, (types.Property, types.Schema)):
+            return self.output(response)
         if self.output is False:
             raise errors.SchemaValidationError()  # TODO response should be None
         if self.output is True:
             if not isinstance(response, dict):
                 raise errors.SchemaValidationError()
             return response
-        if isinstance(self.output, (types.Property, types.Schema)):
-            return self.output(response)
         raise errors.SchemaValidationError()  # TODO unknown rule type
 
     def __call__(self, func: Callable) -> Callable:
