@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Union, Type
+from typing import Any, Callable, ClassVar, Union, Type
 import flask
 from . import types, errors
 
@@ -44,3 +44,16 @@ class SchemaProtect:
             return func(self.request_body, *args, **kwargs)
 
         return _call
+
+
+class CustomProperty:
+    def __init__(self, *args: Type, **kwargs: Any):
+        self.prop = types.Property(*args, **kwargs)
+
+    def __call__(self, func: ClassVar) -> Callable:
+        @functools.wraps(func)
+        def _wrapped(value: Any):
+            value: Any = self.prop(value)
+            return func(func.__class__, value)
+
+        return _wrapped

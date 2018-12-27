@@ -84,7 +84,11 @@ class Property:
 
     def __call__(self, value: Any) -> Any:
         value = self._get_value(value)
-        if value is not None and not isinstance(value, self.types):
+        if (
+            value is not None
+            and len(self.types) > 0
+            and not isinstance(value, self.types)
+        ):
             raise errors.SchemaValidationError()  # TODO wrong type
         if self.callback is not None:
             return self.callback(value)
@@ -119,9 +123,9 @@ class Object(Property):
 class Array(Property):
     def __init__(
         self,
-        schema: Type[Property],
-        min_length: Union[int, float] = None,
-        max_length: Union[int, float] = None,
+        schema: Union[Property, Type[Property]],
+        min_length: Union[int, float, Callable] = None,
+        max_length: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(Array, self).__init__(list, **kwargs)
@@ -139,12 +143,36 @@ class Array(Property):
         return value
 
 
+class Choice(Property):
+    def __init__(self, choices, **kwargs):
+        super(Choice, self).__init__(**kwargs)
+        self.choices = choices
+
+    @staticmethod
+    def check(value: Any, choice: Any):
+        if isinstance(choice, Property):
+            try:
+                choice(value)
+                return True
+            except errors.SchemaValidationError:
+                return False
+        return value == choice
+
+    def __call__(self, value: Any) -> Any:
+        value = super(Choice, self).__call__(value)
+        if value is None:
+            return None
+        if not any(self.check(value, choice) for choice in self.choices):
+            raise errors.SchemaValidationError()
+        return value
+
+
 class Number(Property):
     def __init__(
         self,
         types: Tuple = (int, float),
-        min_value: Union[int, float] = None,
-        max_value: Union[int, float] = None,
+        min_value: Union[int, float, Callable] = None,
+        max_value: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(Number, self).__init__(*types, **kwargs)
@@ -178,8 +206,8 @@ class Bool(Property):
 class String(Property):
     def __init__(
         self,
-        min_length: Union[int, float] = None,
-        max_length: Union[int, float] = None,
+        min_length: Union[int, float, Callable] = None,
+        max_length: Union[int, float, Callable] = None,
         **kwargs,
     ):
         super(String, self).__init__(str, **kwargs)
@@ -235,7 +263,10 @@ class Date(Property):
     date_format = "%Y-%m-%d"
 
     def __init__(
-        self, min_value: datetime.date = None, max_value: datetime.date = None, **kwargs
+        self,
+        min_value: Union[datetime.date, Callable] = None,
+        max_value: Union[datetime.date, Callable] = None,
+        **kwargs,
     ):
         super(Date, self).__init__(datetime.date, **kwargs)
         self.range = _Range(min_value, max_value)
@@ -282,8 +313,8 @@ class DateTime(Property):
 
     def __init__(
         self,
-        min_value: datetime.datetime = None,
-        max_value: datetime.datetime = None,
+        min_value: Union[datetime.datetime, Callable] = None,
+        max_value: Union[datetime.datetime, Callable] = None,
         **kwargs,
     ):
         super(DateTime, self).__init__(datetime.datetime, **kwargs)
