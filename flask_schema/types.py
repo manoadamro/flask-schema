@@ -277,7 +277,7 @@ class Date(Property):
 
 class DateTime(Property):
 
-    timezone_matcher = re.compile(r"^.*?\+|-[0-9]{2}:[0-9]{2}$")
+    timezone_matcher = re.compile(r"^.*?[+|\-][0-9]{2}:[0-9]{2}$")
     datetime_format = "%Y-%m-%dT%H:%M:%S.%f"
 
     def __init__(
@@ -291,12 +291,33 @@ class DateTime(Property):
 
     @classmethod
     def _parse_datetime(cls, value: str):
+
         if value.endswith("Z"):
             value = f"{value[:-1]}+00:00"
-        parse_format = cls.datetime_format
-        if re.match(cls.timezone_matcher, value) is not None:
-            parse_format = f"{parse_format}%z"
-        return datetime.datetime.strptime(value, parse_format)
+
+        if re.match(cls.timezone_matcher, value) is None:
+            timezone = datetime.timezone.utc
+
+        else:
+            value, timezone_string = value[:-6], value[-6:]
+            symbol, timezone_string = timezone_string[0], timezone_string[1:]
+            hours, minutes = timezone_string.split(":")
+
+            hours = int(hours)
+            minutes = int(minutes)
+
+            if symbol == "-":
+                hours = -hours
+                minutes = -minutes
+
+            if hours == 0 and minutes == 0:
+                timezone = datetime.timezone.utc
+            else:
+                delta = datetime.timedelta(hours=hours, minutes=minutes)
+                timezone = datetime.timezone(delta)
+
+        datetime_object = datetime.datetime.strptime(value, cls.datetime_format)
+        return datetime_object.replace(tzinfo=timezone)
 
     @classmethod
     def _get_datetime(

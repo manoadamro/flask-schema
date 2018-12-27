@@ -19,13 +19,14 @@ class DateTimeTest(unittest.TestCase):
     def test_from_string(self):
         prop = flask_schema.types.DateTime()
         self.assertEqual(
-            prop("2018-12-26T00:00:00.000"), datetime.datetime(2018, 12, 26, 0, 0, 0, 0)
+            prop("2018-12-26T00:00:00.000"),
+            datetime.datetime(2018, 12, 26, 0, 0, 0, 0, tzinfo=datetime.timezone.utc),
         )
 
     def test_from_string_with_timezone(self):
         prop = flask_schema.types.DateTime()
         self.assertEqual(
-            prop("2018-12-26T00:00:00.000+10:00"),
+            prop("2018-12-26T00:00:00.000-10:00"),
             datetime.datetime(
                 2018,
                 12,
@@ -34,8 +35,16 @@ class DateTimeTest(unittest.TestCase):
                 0,
                 0,
                 0,
-                tzinfo=datetime.timezone(datetime.timedelta(hours=10)),
+                tzinfo=datetime.timezone(datetime.timedelta(hours=-10)),
             ),
+        )
+
+    def test_bad_timezone_symbol(self):
+        prop = flask_schema.types.DateTime()
+        self.assertRaises(
+            flask_schema.errors.SchemaValidationError,
+            prop,
+            "2018-12-26T00:00:00.000$10:00",
         )
 
     def test_from_string_with_z(self):
