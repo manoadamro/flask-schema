@@ -6,7 +6,7 @@ import setuptools
 NAME = 'flask-schema'
 VERSION = '0.0.0'
 REQUIRES = [
-
+    "flask"
 ]
 
 

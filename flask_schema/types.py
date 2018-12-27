@@ -1,4 +1,5 @@
 import re
+import copy
 import datetime
 from typing import Any, Callable, Dict, List, Pattern, Tuple, Type, Union
 
@@ -148,23 +149,20 @@ class Choice(Property):
         super(Choice, self).__init__(**kwargs)
         self.choices = choices
 
-    @staticmethod
-    def check(value: Any, choice: Any):
-        if isinstance(choice, Property):
-            try:
-                choice(value)
-                return True
-            except errors.SchemaValidationError:
-                return False
-        return value == choice
-
     def __call__(self, value: Any) -> Any:
         value = super(Choice, self).__call__(value)
         if value is None:
             return None
-        if not any(self.check(value, choice) for choice in self.choices):
-            raise errors.SchemaValidationError()
-        return value
+        for choice in self.choices:
+            if isinstance(choice, Property):
+                try:
+                    return choice(copy.deepcopy(value))
+                except errors.SchemaValidationError:
+                    continue
+            elif value == choice:
+                return value
+
+        raise errors.SchemaValidationError()
 
 
 class Number(Property):
