@@ -59,6 +59,7 @@ class ApiTest(flask_testing.TestCase):
                     "name": "dave",
                     "address": {"post_code": "AB1 2CD", "number": 123},
                     "date_of_birth": "1970-01-01",
+                    "something": 321,
                 },
             )
         )
@@ -71,6 +72,7 @@ class ApiTest(flask_testing.TestCase):
                     "name": "dave",
                     "address": {"post_code": "AB1 2CD", "number": 123, "nope": True},
                     "date_of_birth": "1970-01-01",
+                    "something": 321,
                 },
             )
         )
@@ -81,8 +83,9 @@ class ApiTest(flask_testing.TestCase):
                 "/",
                 json={
                     "name": "dave",
-                    "address": {"post_code": "AB1 2CD", "number": 123, "nope": True},
+                    "address": {"post_code": "AB1 2CD", "number": 123},
                     "date_of_birth": "2010-01-01",
+                    "something": 321,
                 },
             )
         )
