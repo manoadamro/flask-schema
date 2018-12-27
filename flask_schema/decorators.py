@@ -1,11 +1,23 @@
 import functools
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Type
 import flask
 from . import types, errors
 
 
 class SchemaProtect:
-    def __init__(self, rule: Union[bool, types.Property, None]):
+    def __init__(
+        self,
+        rule: Union[
+            bool,
+            Type[types.Schema],
+            types.Schema,
+            Type[types.Property],
+            types.Property,
+            None,
+        ],
+    ):
+        if isinstance(rule, type) and issubclass(rule, (types.Property, types.Schema)):
+            rule = rule()
         self.rule = rule
 
     @property
@@ -14,14 +26,16 @@ class SchemaProtect:
             if not flask.request.is_json:
                 raise errors.SchemaValidationError()  # TODO expected json
             return flask.request.json
-        elif self.rule is False:
+        if self.rule is False:
             if flask.request.is_json:
                 raise errors.SchemaValidationError()  # TODO unexpected json
             return None
-        elif isinstance(self.rule, types.Property):
-            return self.rule(flask.request.json)
-        elif self.rule is None:
+        if self.rule is None:
+            if flask.request.is_json:
+                return flask.request.json
             return None
+        if isinstance(self.rule, (types.Property, types.Schema)):
+            return self.rule(flask.request.json)
         raise errors.SchemaValidationError()  # TODO unknown rule type
 
     def __call__(self, func: Callable) -> Callable:
