@@ -1,7 +1,6 @@
 import re
 import datetime
-import functools
-from typing import Any, Callable, ClassVar, Dict, List, Pattern, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Pattern, Tuple, Type, Union
 
 from . import errors
 
@@ -85,25 +84,15 @@ class Property:
 
     def __call__(self, value: Any) -> Any:
         value = self._get_value(value)
-        if value is not None and not isinstance(value, self.types):
+        if (
+            value is not None
+            and len(self.types) > 0
+            and not isinstance(value, self.types)
+        ):
             raise errors.SchemaValidationError()  # TODO wrong type
         if self.callback is not None:
             return self.callback(value)
         return value
-
-
-def custom_property(*args: Type, **kwargs: Any) -> Callable:
-    prop = Property(*args, **kwargs)
-
-    def _call(func: ClassVar) -> Callable:
-        @functools.wraps(func)
-        def _wrapped(value: Any):
-            value: Any = prop(value)
-            return func(func.__class__, value)
-
-        return _wrapped
-
-    return _call
 
 
 class Object(Property):
@@ -151,6 +140,30 @@ class Array(Property):
             return None
         for i in range(len(value)):
             value[i] = self.schema(value[i])
+        return value
+
+
+class Choice(Property):
+    def __init__(self, choices, **kwargs):
+        super(Choice, self).__init__(**kwargs)
+        self.choices = choices
+
+    @staticmethod
+    def check(value: Any, choice: Any):
+        if isinstance(choice, Property):
+            try:
+                choice(value)
+                return True
+            except errors.SchemaValidationError:
+                return False
+        return value == choice
+
+    def __call__(self, value: Any) -> Any:
+        value = super(Choice, self).__call__(value)
+        if value is None:
+            return None
+        if not any(self.check(value, choice) for choice in self.choices):
+            raise errors.SchemaValidationError()
         return value
 
 

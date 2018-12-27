@@ -2,7 +2,7 @@ import flask
 import flask_testing
 import re
 import datetime
-from flask_schema import schema, schema_protect
+from flask_schema import schema, custom_property, schema_protect
 
 
 bp = flask.Blueprint(__name__, "test_bp")
@@ -32,7 +32,7 @@ class Person(schema.Schema):
     date_of_birth = schema.Date(max_value=get_minimum_dob, nullable=False)
     date_of_death = schema.Date(max_value=datetime.date.today, nullable=True)
 
-    @schema.custom_property(int, float, nullable=False)
+    @custom_property(int, float, nullable=False)
     def something(cls, value):
         if not isinstance(value, (int, float)):
             raise TypeError

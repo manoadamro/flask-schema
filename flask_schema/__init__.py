@@ -1,7 +1,7 @@
 from . import types, errors, decorators
 
-# decorators
 schema_protect = decorators.SchemaProtect
+custom_property = decorators.CustomProperty
 
 # types
 schema = types
