@@ -10,13 +10,24 @@ class DateTest(unittest.TestCase):
     millenium = datetime.date(year=2000, month=1, day=1)
     millenium05 = datetime.date(year=2005, month=1, day=1)
 
-    # TODO from timestamp
+    def test_from_timestamp(self):
+        prop = flask_schema.types.Date()
+        self.assertEqual(prop(1545827395.914913), datetime.date(2018, 12, 26))
 
-    # TODO from string
+    def test_from_string(self):
+        prop = flask_schema.types.Date()
+        self.assertEqual(prop("2018-12-26"), datetime.date(2018, 12, 26))
 
-    # TODO from datetime
+    def test_from_datetime(self):
+        prop = flask_schema.types.Date()
+        self.assertEqual(
+            prop(datetime.datetime(2018, 12, 26, 12, 29, 55, 914913)),
+            datetime.date(2018, 12, 26),
+        )
 
-    # TODO wrong type
+    def test_date_wrong_type(self):
+        prop = flask_schema.types.Date()
+        self.assertRaises(flask_schema.errors.SchemaValidationError, prop, True)
 
     def test_min_only(self):
         prop = flask_schema.types.Date(min_value=self.epoc)

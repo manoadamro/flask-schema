@@ -10,15 +10,44 @@ class DateTimeTest(unittest.TestCase):
     millenium = datetime.datetime(year=2000, month=1, day=1)
     millenium05 = datetime.datetime(year=2005, month=1, day=1)
 
-    # TODO from timestamp
+    def test_from_timestamp(self):
+        prop = flask_schema.types.DateTime()
+        self.assertEqual(
+            prop(1545827395.914913), datetime.datetime(2018, 12, 26, 12, 29, 55, 914913)
+        )
 
-    # TODO from string
+    def test_from_string(self):
+        prop = flask_schema.types.DateTime()
+        self.assertEqual(
+            prop("2018-12-26T00:00:00.000"), datetime.datetime(2018, 12, 26, 0, 0, 0, 0)
+        )
 
-    # TODO from string with time zone
+    def test_from_string_with_timezone(self):
+        prop = flask_schema.types.DateTime()
+        self.assertEqual(
+            prop("2018-12-26T00:00:00.000+10:00"),
+            datetime.datetime(
+                2018,
+                12,
+                26,
+                0,
+                0,
+                0,
+                0,
+                tzinfo=datetime.timezone(datetime.timedelta(hours=10)),
+            ),
+        )
 
-    # TODO from string with Z
+    def test_from_string_with_z(self):
+        prop = flask_schema.types.DateTime()
+        self.assertEqual(
+            prop("2018-12-26T00:00:00.000Z"),
+            datetime.datetime(2018, 12, 26, 0, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        )
 
-    # TODO wrong type
+    def test_wrong_datetime_type(self):
+        prop = flask_schema.types.DateTime()
+        self.assertRaises(flask_schema.errors.SchemaValidationError, prop, True)
 
     def test_min_only(self):
         prop = flask_schema.types.DateTime(min_value=self.epoc)

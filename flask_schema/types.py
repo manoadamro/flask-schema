@@ -239,12 +239,12 @@ class Date(Property):
 
     @staticmethod
     def _get_date(
-        value: Union[str, datetime.datetime, None]
+        value: Union[str, float, int, datetime.datetime, datetime.date, None]
     ) -> Union[datetime.date, None]:
         try:
             if value is None:
-                return
-            if isinstance(value, (float, int)):
+                return None
+            if isinstance(value, (float, int)) and value not in (True, False):
                 return datetime.date.fromtimestamp(value)
             if isinstance(value, str):
                 return datetime.datetime.fromisoformat(value).date()
@@ -257,7 +257,7 @@ class Date(Property):
             raise errors.SchemaValidationError(str(ex))  # TODO
 
     def __call__(
-        self, value: Union[str, datetime.date, None]
+        self, value: Union[str, float, int, datetime.date, datetime.datetime, None]
     ) -> Union[str, datetime.date, None]:
         value = self._get_date(value)
         value = super(Date, self).__call__(value)
@@ -278,12 +278,12 @@ class DateTime(Property):
 
     @staticmethod
     def _get_datetime(
-        value: Union[str, datetime.datetime, None]
+        value: Union[str, float, int, datetime.datetime, None]
     ) -> Union[datetime.datetime, None]:
         try:
             if value is None:
-                return
-            if isinstance(value, (float, int)):
+                return None
+            if isinstance(value, (float, int)) and value not in (True, False):
                 return datetime.datetime.fromtimestamp(value)
             if isinstance(value, str):
                 if value.endswith("Z"):
@@ -296,7 +296,7 @@ class DateTime(Property):
             raise errors.SchemaValidationError(str(ex))  # TODO
 
     def __call__(
-        self, value: Union[str, datetime.datetime, None]
+        self, value: Union[str, float, int, datetime.datetime, None]
     ) -> Union[str, datetime.datetime, None]:
         value = self._get_datetime(value)
         value = super(DateTime, self).__call__(value)
