@@ -32,11 +32,11 @@ class Person(schema.Schema):
     date_of_birth = schema.Date(max_value=get_minimum_dob, nullable=False)
     date_of_death = schema.Date(max_value=datetime.date.today, nullable=True)
 
-    @staticmethod
-    def something(value):
-        if isinstance(value, (int, float)):
-            return value * 2
-        return str(value) + str(value)
+    @schema.custom_property(int, float, nullable=False)
+    def something(cls, value):
+        if not isinstance(value, (int, float)):
+            raise TypeError
+        return value * 2
 
 
 @bp.route("/", methods=["POST"])

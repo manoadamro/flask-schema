@@ -1,6 +1,7 @@
 import re
 import datetime
-from typing import Any, Callable, Dict, List, Pattern, Tuple, Type, Union
+import functools
+from typing import Any, Callable, ClassVar, Dict, List, Pattern, Tuple, Type, Union
 
 from . import errors
 
@@ -89,6 +90,20 @@ class Property:
         if self.callback is not None:
             return self.callback(value)
         return value
+
+
+def custom_property(*args: Type, **kwargs: Any) -> Callable:
+    prop = Property(*args, **kwargs)
+
+    def _call(func: ClassVar) -> Callable:
+        @functools.wraps(func)
+        def _wrapped(value: Any):
+            value: Any = prop(value)
+            return func(func.__class__, value)
+
+        return _wrapped
+
+    return _call
 
 
 class Object(Property):
