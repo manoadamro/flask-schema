@@ -1,7 +1,7 @@
-from . import types, errors
+from . import types, errors, decorators
 
 # decorators
-...
+schema_protect = decorators.SchemaProtect
 
 # types
 schema = types
