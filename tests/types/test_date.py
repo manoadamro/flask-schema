@@ -18,6 +18,10 @@ class DateTest(unittest.TestCase):
         prop = flask_schema.types.Date()
         self.assertEqual(prop("2018-12-26"), datetime.date(2018, 12, 26))
 
+    def test_from_datetime_string(self):
+        prop = flask_schema.types.Date()
+        self.assertEqual(prop("2018-12-26T00:00:00.000Z"), datetime.date(2018, 12, 26))
+
     def test_from_datetime(self):
         prop = flask_schema.types.Date()
         self.assertEqual(

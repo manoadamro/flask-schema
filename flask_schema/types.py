@@ -231,15 +231,24 @@ class Uuid(Regex):
 
 
 class Date(Property):
+
+    date_format = "%Y-%m-%d"
+
     def __init__(
         self, min_value: datetime.date = None, max_value: datetime.date = None, **kwargs
     ):
         super(Date, self).__init__(datetime.date, **kwargs)
         self.range = _Range(min_value, max_value)
 
-    @staticmethod
+    @classmethod
+    def _parse_date(cls, value: str):
+        if "T" in value:
+            value = value.split("T")[0]
+        return datetime.datetime.strptime(value, cls.date_format).date()
+
+    @classmethod
     def _get_date(
-        value: Union[str, float, int, datetime.datetime, datetime.date, None]
+        cls, value: Union[str, float, int, datetime.datetime, datetime.date, None]
     ) -> Union[datetime.date, None]:
         try:
             if value is None:
@@ -247,7 +256,7 @@ class Date(Property):
             if isinstance(value, (float, int)) and value not in (True, False):
                 return datetime.date.fromtimestamp(value)
             if isinstance(value, str):
-                return datetime.datetime.fromisoformat(value).date()
+                return cls._parse_date(value)
             if isinstance(value, datetime.datetime):
                 return value.date()
             if isinstance(value, datetime.date):
@@ -267,6 +276,10 @@ class Date(Property):
 
 
 class DateTime(Property):
+
+    timezone_matcher = re.compile(r"^.*?\+|-[0-9]{2}:[0-9]{2}$")
+    datetime_format = "%Y-%m-%dT%H:%M:%S.%f"
+
     def __init__(
         self,
         min_value: datetime.datetime = None,
@@ -276,9 +289,18 @@ class DateTime(Property):
         super(DateTime, self).__init__(datetime.datetime, **kwargs)
         self.range = _Range(min_value, max_value)
 
-    @staticmethod
+    @classmethod
+    def _parse_datetime(cls, value: str):
+        if value.endswith("Z"):
+            value = f"{value[:-1]}+00:00"
+        parse_format = cls.datetime_format
+        if re.match(cls.timezone_matcher, value) is not None:
+            parse_format = f"{parse_format}%z"
+        return datetime.datetime.strptime(value, parse_format)
+
+    @classmethod
     def _get_datetime(
-        value: Union[str, float, int, datetime.datetime, None]
+        cls, value: Union[str, float, int, datetime.datetime, None]
     ) -> Union[datetime.datetime, None]:
         try:
             if value is None:
@@ -286,9 +308,7 @@ class DateTime(Property):
             if isinstance(value, (float, int)) and value not in (True, False):
                 return datetime.datetime.fromtimestamp(value)
             if isinstance(value, str):
-                if value.endswith("Z"):
-                    value = f"{value[:-1]}+00:00"
-                return datetime.datetime.fromisoformat(value)
+                return cls._parse_datetime(value)
             if isinstance(value, datetime.datetime):
                 return value
             raise ValueError()  # TODO wrong type
