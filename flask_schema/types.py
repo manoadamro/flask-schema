@@ -1,6 +1,6 @@
-import re
 import copy
 import datetime
+import re
 from typing import Any, Callable, Dict, List, Pattern, Tuple, Type, Union
 
 from . import errors

@@ -1,13 +1,18 @@
 import functools
-from typing import Any, Callable, ClassVar, Union, Type
+import os
+from typing import Any, Callable, ClassVar, Dict, Type, Union
+
 import flask
-from . import types, errors
+
+from . import errors, types
 
 
 class SchemaProtect:
+    validate_output = os.environ.get("FLASK_SCHEMA_VALIDATE_OUTPUT", True)
+
     def __init__(
         self,
-        rule: Union[
+        schema: Union[
             bool,
             Type[types.Schema],
             types.Schema,
@@ -15,33 +20,61 @@ class SchemaProtect:
             types.Property,
             None,
         ],
+        output: Union[
+            bool,
+            Type[types.Schema],
+            types.Schema,
+            Type[types.Property],
+            types.Property,
+            None,
+        ] = None,
     ):
-        if isinstance(rule, type) and issubclass(rule, (types.Property, types.Schema)):
-            rule = rule()
-        self.rule = rule
+        self.schema = self._resolve(schema)
+        self.output = self._resolve(output)
 
-    @property
+    @staticmethod
+    def _resolve(value: Any) -> Any:
+        if isinstance(value, type) and issubclass(
+            value, (types.Property, types.Schema)
+        ):
+            return value()
+        return value
+
     def request_body(self):
-        if self.rule is True:
+        if self.schema is True:
             if not flask.request.is_json:
                 raise errors.SchemaValidationError()  # TODO expected json
             return flask.request.json
-        if self.rule is False:
+        if self.schema is False:
             if flask.request.is_json:
                 raise errors.SchemaValidationError()  # TODO unexpected json
             return None
-        if self.rule is None:
+        if self.schema is None:
             if flask.request.is_json:
                 return flask.request.json
             return None
-        if isinstance(self.rule, (types.Property, types.Schema)):
-            return self.rule(flask.request.json)
+        if isinstance(self.schema, (types.Property, types.Schema)):
+            return self.schema(flask.request.json)
+        raise errors.SchemaValidationError()  # TODO unknown rule type
+
+    def response_body(self, response: Union[Dict, types.Property, types.Schema, None]):
+        if not self.validate_output or self.output is None:
+            return response
+        if self.output is False:
+            raise errors.SchemaValidationError()  # TODO response should be None
+        if self.output is True:
+            if not isinstance(response, dict):
+                raise errors.SchemaValidationError()
+            return response
+        if isinstance(self.output, (types.Property, types.Schema)):
+            return self.output(response)
         raise errors.SchemaValidationError()  # TODO unknown rule type
 
     def __call__(self, func: Callable) -> Callable:
         @functools.wraps(func)
         def _call(*args: Any, **kwargs: Any) -> Any:
-            return func(self.request_body, *args, **kwargs)
+            response = func(self.request_body(), *args, **kwargs)
+            return self.response_body(response)
 
         return _call
 
